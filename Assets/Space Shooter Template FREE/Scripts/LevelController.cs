@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 #region Serializable classes
 [System.Serializable]
@@ -11,7 +11,7 @@ public class EnemyWaves
     public float timeToStart;
 
     [Tooltip("Enemy wave's prefab")]
-    public Wave wave;
+    public GameObject wave;
 }
 
 #endregion
@@ -26,14 +26,19 @@ public class LevelController : MonoBehaviour {
     public GameObject[] planets;
     public float timeBetweenPlanets;
     public float planetsSpeed;
-
-    [SerializeField] private TMP_Text remainingEnemiesText;
-
-    private int remainingEnemies;
-
     List<GameObject> planetsList = new List<GameObject>();
 
     Camera mainCamera;
+
+    public void PlayerDestroyed()
+    {
+        Invoke(nameof(ReloadScene), 2);
+    }
+
+    private void ReloadScene()
+    {
+        SceneManager.LoadScene("Demo_Scene");
+    }
 
     private void Start()
     {
@@ -41,33 +46,19 @@ public class LevelController : MonoBehaviour {
         //for each element in 'enemyWaves' array creating coroutine which generates the wave
         for (int i = 0; i<enemyWaves.Length; i++)
         {
-            remainingEnemies += enemyWaves[i].wave.count;
             StartCoroutine(CreateEnemyWave(enemyWaves[i].timeToStart, enemyWaves[i].wave));
         }
-
         StartCoroutine(PowerupBonusCreation());
         StartCoroutine(PlanetsCreation());
-
-        remainingEnemiesText.text = remainingEnemies.ToString();
     }
 
     //Create a new wave after a delay
-    IEnumerator CreateEnemyWave(float delay, Wave wave)
+    IEnumerator CreateEnemyWave(float delay, GameObject Wave)
     {
         if (delay != 0)
             yield return new WaitForSeconds(delay);
         if (Player.instance != null)
-        {
-            var newWave = Instantiate(wave);
-            newWave.enemySpawned += OnEnemySpawned;
-        }
-    }
-
-    private void OnEnemySpawned()
-    {
-        remainingEnemies--;
-
-        remainingEnemiesText.text = remainingEnemies.ToString();
+            Instantiate(Wave);
     }
 
     //endless coroutine generating 'levelUp' bonuses.
